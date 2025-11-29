@@ -19,6 +19,11 @@ const REQUEST_PAGE_TEXT = "GET_TEXT"; // Message type used to request text from 
 const REQUEST_SUMMARY = "REQUEST_SUMMARY"; // Message type used by Popup to start summarization process
 const REQUEST_ESSENCE = "REQUEST_ESSENCE"; // Message type used by Popup to start essence extraction
 
+// --- Prompts Definition (Best Practice: Use const for complex, static data) ---
+
+const SUMMARY_PROMPT = `以下の文章を要約せよ。1. 内容をわかりやすく整理し、簡潔にまとめる。2. 文体は必ず「だ・である調」で統一する。3. 重要なポイントは漏らさず、読者が理解できる形でまとめる。`;
+const ESSENCE_PROMPT = `以下の文章を読み、その**構造的な課題**、**社会的文脈**、または**未来への影響**という観点から分析し、記事の**真の本質**を深く考察した上で、**簡潔な一文**で示せ。文体は「だ・である調」を用いること。`;
+
 // Listener for messages from content scripts or popup
 chrome.runtime.onMessage.addListener(
   (request, _sender, sendResponse) => {
@@ -68,14 +73,8 @@ chrome.runtime.onMessage.addListener(
             }
 
             // 3. Perform summarization
-            let prompt = "";
-            if (request.type === REQUEST_SUMMARY) {
-                // New summary prompt (Japanese)
-                prompt = `以下の文章を要約せよ。1. 内容をわかりやすく整理し、簡潔にまとめる。2. 文体は必ず「だ・である調」で統一する。3. 重要なポイントは漏らさず、読者が理解できる形でまとめる。\n\n${pageText}`;
-            } else if (request.type === REQUEST_ESSENCE) {
-                // New essence extraction prompt (Japanese)
-                prompt = `以下の文章を読み、その**構造的な課題**、**社会的文脈**、または**未来への影響**という観点から分析し、記事の**真の本質**を深く考察した上で、**簡潔な一文**で示せ。文体は「だ・である調」を用いること。\n\n${pageText}`;
-            }
+            let promptBase = request.type === REQUEST_SUMMARY ? SUMMARY_PROMPT : ESSENCE_PROMPT;
+            const prompt = `${promptBase}\n\n${pageText}`;
 
             const response = await genai.models.generateContent({
               model: MODEL_NAME,
@@ -89,12 +88,8 @@ chrome.runtime.onMessage.addListener(
 
         } catch (error) {
             console.error("Summary Process Error:", error);
-            let errorMessage = "Error processing summary.";
-            
-            if (error instanceof Error) {
-                errorMessage = `Error processing summary: ${error.message}`;
-            }
-
+            const errorMessage = `Error processing summary: ${error instanceof Error ? error.message : "An unknown error occurred."}`;
+ 
             sendResponse({ summary: errorMessage });
         }
     })();

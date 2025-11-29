@@ -5,8 +5,23 @@ import './App.css'
 const REQUEST_SUMMARY = "REQUEST_SUMMARY";
 const REQUEST_ESSENCE = "REQUEST_ESSENCE"; // Added for essence extraction
 
+// --- UI Text and Messages Definitions ---
+const MESSAGES = {
+  INITIAL: "「要約」または「本質」ボタンをクリックして処理を開始してください。",
+  API_ERROR: "エラー: Chrome Runtime APIが利用できません。",
+  PROCESSING: (name: string) => `${name}を実行中...`,
+  RESPONSE_FAIL: (name: string) => `${name}の応答取得に失敗しました。`,
+  UNKNOWN_ERROR: "不明なエラーが発生しました。",
+  COPY_SUCCESS: "コピー完了",
+  COPY_BUTTON: "結果をコピー",
+  LOADING: "処理中...",
+  SUMMARIZE_BUTTON: "要約",
+  ESSENCE_BUTTON: "本質",
+  NOTE: "GEMINI_API_KEYが環境変数に設定されていることを確認してください。",
+};
+
 function App() {
-  const [summary, setSummary] = useState("「要約」または「本質」ボタンをクリックして処理を開始してください。");
+  const [summary, setSummary] = useState(MESSAGES.INITIAL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
@@ -24,20 +39,19 @@ function App() {
     setTimeout(() => setCopyStatus('idle'), 2000);
   };
 
-  // Function to request summarization from the background script
   // Function to request summarization or essence extraction from the background script
   const handleProcess = async (type: typeof REQUEST_SUMMARY | typeof REQUEST_ESSENCE) => {
     // Check for Chrome runtime availability
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
-      setSummary("エラー: Chrome Runtime APIが利用できません。");
+      setSummary(MESSAGES.API_ERROR);
       setError(true);
       return;
     }
 
     setLoading(true);
     setError(false);
-    const processName = type === REQUEST_SUMMARY ? "要約" : "本質抽出";
-    setSummary(`${processName}を実行中...`);
+    const processName = type === REQUEST_SUMMARY ? MESSAGES.SUMMARIZE_BUTTON : MESSAGES.ESSENCE_BUTTON;
+    setSummary(MESSAGES.PROCESSING(processName));
 
     try {
       // Send message to the background service worker
@@ -53,11 +67,11 @@ function App() {
       if (response && response.summary) {
         setSummary(response.summary);
       } else {
-        setSummary(`${processName}の応答取得に失敗しました。`);
+        setSummary(MESSAGES.RESPONSE_FAIL(processName));
         setError(true);
       }
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "不明なエラーが発生しました。";
+      const errorMessage = e instanceof Error ? e.message : MESSAGES.UNKNOWN_ERROR;
       setSummary(`エラー: ${errorMessage}`);
       setError(true);
     } finally {
@@ -73,23 +87,23 @@ function App() {
           onClick={() => handleProcess(REQUEST_SUMMARY)}
           disabled={loading}
         >
-          {loading ? '処理中...' : '要約'}
+          {loading ? MESSAGES.LOADING : MESSAGES.SUMMARIZE_BUTTON}
         </button>
         <button
           onClick={() => handleProcess(REQUEST_ESSENCE)}
           disabled={loading}
           className="essence-button"
         >
-          {loading ? '処理中...' : '本質'}
+          {loading ? MESSAGES.LOADING : MESSAGES.ESSENCE_BUTTON}
         </button>
       </div>
       
-      {summary !== "「要約」または「本質」ボタンをクリックして処理を開始してください。" && !error && !loading && (
+      {summary !== MESSAGES.INITIAL && !error && !loading && (
         <button
           onClick={handleCopy}
           className={`copy-button ${copyStatus}`}
         >
-          {copyStatus === 'copied' ? 'コピー完了' : '結果をコピー'}
+          {copyStatus === 'copied' ? MESSAGES.COPY_SUCCESS : MESSAGES.COPY_BUTTON}
         </button>
       )}
 
@@ -103,7 +117,7 @@ function App() {
           )
         ))}
       </div>
-      <p className="note">GEMINI_API_KEYが環境変数に設定されていることを確認してください。</p>
+      <p className="note">{MESSAGES.NOTE}</p>
     </div>
   )
 }

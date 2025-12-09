@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import './App.css'
 
 // We need to define the type constant used by the background script
@@ -7,17 +7,17 @@ const REQUEST_ESSENCE = "REQUEST_ESSENCE"; // Added for essence extraction
 
 // --- UI Text and Messages Definitions ---
 const MESSAGES = {
-  INITIAL: "「要約」または「本質」ボタンをクリックして処理を開始してください。",
-  API_ERROR: "エラー: Chrome Runtime APIが利用できません。",
-  PROCESSING: (name: string) => `${name}を実行中...`,
-  RESPONSE_FAIL: (name: string) => `${name}の応答取得に失敗しました。`,
+  INITIAL: "要約または本質抽出を開始するには、いずれかのボタンをクリックしてください。",
+  API_ERROR: "エラー: ChromeランタイムAPIが利用できません。",
+  PROCESSING: (name: string) => `${name}処理中...`,
+  RESPONSE_FAIL: (name: string) => `${name}の取得に失敗しました。`,
   UNKNOWN_ERROR: "不明なエラーが発生しました。",
-  COPY_SUCCESS: "コピー完了",
+  COPY_SUCCESS: "コピーしました",
   COPY_BUTTON: "結果をコピー",
-  LOADING: "処理中...",
-  SUMMARIZE_BUTTON: "要約",
-  ESSENCE_BUTTON: "本質",
-  NOTE: "GEMINI_API_KEYが環境変数に設定されていることを確認してください。",
+  LOADING: "読み込み中...",
+  SUMMARIZE_BUTTON: "要約する",
+  ESSENCE_BUTTON: "本質を抽出する",
+  NOTE: "環境変数にVITE_GEMINI_API_KEYが設定されていることを確認してください。",
 };
 
 function App() {
@@ -27,7 +27,7 @@ function App() {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
 
   // Function to handle copying the summary text to the clipboard
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(summary);
       setCopyStatus('copied');
@@ -37,10 +37,10 @@ function App() {
     }
     // Reset status after a short delay
     setTimeout(() => setCopyStatus('idle'), 2000);
-  };
+  }, [summary]);
 
   // Function to request summarization or essence extraction from the background script
-  const handleProcess = async (type: typeof REQUEST_SUMMARY | typeof REQUEST_ESSENCE) => {
+  const handleProcess = useCallback(async (type: typeof REQUEST_SUMMARY | typeof REQUEST_ESSENCE) => {
     // Check for Chrome runtime availability
     if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
       setSummary(MESSAGES.API_ERROR);
@@ -77,11 +77,11 @@ function App() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   return (
     <div className="summary-app-container">
-      <h1>Gemini Summarizer</h1>
+      <h1>Gemini AIツール</h1>
       <div className="button-group">
         <button
           onClick={() => handleProcess(REQUEST_SUMMARY)}

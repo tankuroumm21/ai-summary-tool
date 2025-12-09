@@ -10,6 +10,8 @@ h1 {
   font-size: 1.2em;
   margin-bottom: 10px;
   color: #333;
+  /* --- ★ここを追加★ --- */
+  text-align: center; 
 }
 
 button {

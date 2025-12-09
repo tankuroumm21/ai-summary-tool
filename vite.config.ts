@@ -23,6 +23,10 @@ export default defineConfig({
           // The popup (index.html) will use the default asset naming strategy for dynamic imports
           return `assets/[name]-[hash].js`;
         },
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          genai: ['@google/genai'],
+        },
       }
     },
   },

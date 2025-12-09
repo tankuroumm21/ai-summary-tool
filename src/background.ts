@@ -2,12 +2,10 @@ import { GoogleGenAI } from "@google/genai";
 
 // Due to Vite's environment handling for extensions, we assume the key is accessible 
 // or will be provided by the user via environment variables during build/execution.
-// Since the environment details are not available here, we will use process.env as a fallback 
-// although for Vite we should typically rely on import.meta.env
-const apiKey = 'AIzaSyBQzxYGBKOChLjwAbPAx9Gsqca0J3-3sOE';
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
 
 if (!apiKey) {
-  console.error("GEMINI_API_KEY is not defined. Gemini API calls will fail.");
+  console.error("VITE_GEMINI_API_KEY is not defined. Gemini API calls will fail.");
 }
 
 // Use gemini-2.5-flash for the requested 'gemini-flash-latest' model
@@ -40,6 +38,13 @@ chrome.runtime.onMessage.addListener(
 
             if (!tab || tab.id === undefined) {
                 sendResponse({ summary: "Error: Could not find active tab." });
+                return;
+            }
+
+            // Some pages (e.g., chrome:// URLs) are restricted and cannot be scripted by extensions.
+            const url = tab.url ?? "";
+            if (url.startsWith("chrome://") || url.startsWith("edge://") || url.startsWith("about:")) {
+                sendResponse({ summary: "この拡張機能は chrome:// などのブラウザ内部ページでは動作できない。通常のWebページ（https:// で始まるサイト）を開いてから再度実行してほしい。" });
                 return;
             }
 
